@@ -5,6 +5,15 @@
  */
 package bd_departamentos;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.management.Query;
+
 /**
  *
  * @author prg
@@ -12,13 +21,26 @@ package bd_departamentos;
 public class Panel extends javax.swing.JPanel {
 
     MySQL myDb = new MySQL();
-    
-    public Panel(MySQL myDb) {
-        
-        this.myDb=myDb;
-        
-        initComponents();    
-        
+    int indice = -1;
+    Connection c;
+    int fila = 0;
+    int tamanio;
+
+    public Panel(MySQL myDb, Connection c) {
+
+        this.myDb = myDb;
+
+        this.c = c;
+
+        initComponents();
+
+        try {
+            llenarComponentes();
+
+        } catch (SQLException ex) {
+
+        }
+
         this.setVisible(true);
     }
 
@@ -46,6 +68,8 @@ public class Panel extends javax.swing.JPanel {
         jbtborrar = new javax.swing.JButton();
         jbtactualizar = new javax.swing.JButton();
         jbtver = new javax.swing.JButton();
+        jBtAnterior = new javax.swing.JButton();
+        jBtSiguiente = new javax.swing.JButton();
 
         jLabel2.setText("jLabel2");
 
@@ -91,6 +115,20 @@ public class Panel extends javax.swing.JPanel {
             }
         });
 
+        jBtAnterior.setText("<");
+        jBtAnterior.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jBtAnteriorActionPerformed(evt);
+            }
+        });
+
+        jBtSiguiente.setText(">");
+        jBtSiguiente.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jBtSiguienteActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -105,16 +143,23 @@ public class Panel extends javax.swing.JPanel {
                         .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 436, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap(35, Short.MAX_VALUE))
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jlciudad)
-                    .addComponent(jlid)
-                    .addComponent(jlobjanual))
-                .addGap(35, 35, 35)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jtfid, javax.swing.GroupLayout.DEFAULT_SIZE, 86, Short.MAX_VALUE)
-                    .addComponent(jtfciudad)
-                    .addComponent(jtfobjanual))
+                    .addGroup(layout.createSequentialGroup()
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jlciudad)
+                            .addComponent(jlid)
+                            .addComponent(jlobjanual))
+                        .addGap(35, 35, 35)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(jtfid, javax.swing.GroupLayout.DEFAULT_SIZE, 86, Short.MAX_VALUE)
+                            .addComponent(jtfciudad)
+                            .addComponent(jtfobjanual)))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(79, 79, 79)
+                        .addComponent(jBtAnterior, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(jBtSiguiente, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addGap(141, 141, 141)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
                     .addComponent(jbtver, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -144,7 +189,10 @@ public class Panel extends javax.swing.JPanel {
                     .addComponent(jtfobjanual, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jbtactualizar))
                 .addGap(18, 18, 18)
-                .addComponent(jbtver)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jbtver)
+                    .addComponent(jBtAnterior)
+                    .addComponent(jBtSiguiente))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 149, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(24, Short.MAX_VALUE))
@@ -152,9 +200,9 @@ public class Panel extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jbtinsertarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbtinsertarActionPerformed
-        
-        String s="";
-        
+
+        String s = "";
+
         String id = jtfid.getText();
         String ciudad = jtfciudad.getText();
         String objA = jtfobjanual.getText();
@@ -166,52 +214,81 @@ public class Panel extends javax.swing.JPanel {
     }//GEN-LAST:event_jbtinsertarActionPerformed
 
     private void jbtborrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbtborrarActionPerformed
-        String s ="";
-        
+        String s = "";
+
         String id = jtfid.getText();
 
-        s= myDb.consulta("delete from departamentos where idDep=(" + id + ")");
-        
+        s = myDb.consulta("delete from departamentos where idDep=(" + id + ")");
+
         this.jtaSalida.setText(s);
     }//GEN-LAST:event_jbtborrarActionPerformed
 
     private void jbtactualizarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbtactualizarActionPerformed
-        
-        try{
-            String s="";
 
-            String idS = jtfid.getText();
-            String ciudad = jtfciudad.getText();
-            String objA = jtfobjanual.getText();
+        String s = "";
 
-            int id = Integer.parseInt(idS);
+        String id = jtfid.getText();
+        String ciudad = jtfciudad.getText();
+        String objA = jtfobjanual.getText();
 
-            s = myDb.consulta("update departamentos set ciudad = '" +ciudad+ "' where idDep = " +id);
-            s += " " + myDb.consulta("update departamentos set objetivoAnual = " +objA+ " where idDep like " +id);
+        s = myDb.consulta("update departamentos set ciudad = '" + ciudad + "' where idDep = " + id);
+        s += " " + myDb.consulta("update departamentos set objetivoAnual = " + objA + " where idDep like " + id);
 
-            this.jtaSalida.setText(s);
-            
-        }catch(NumberFormatException e){
-            
-            this.jtaSalida.setText(e.getMessage());
-        }
-        
+        this.jtaSalida.setText(s);
+
     }//GEN-LAST:event_jbtactualizarActionPerformed
 
     private void jbtverActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbtverActionPerformed
 
-        Object[][] datos;
 
-        datos = myDb.getValues("departamentos"/*, header*/);
-        System.out.println(myDb.mostrarTabla(datos));
-        
-        this.jtaSalida.setText(myDb.mostrarTabla(datos));
-        
-        
     }//GEN-LAST:event_jbtverActionPerformed
+
+    private void jBtAnteriorActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBtAnteriorActionPerformed
+      
+        jBtSiguiente.setEnabled(true);
+
+        if (fila > 0 ) {
+
+            fila--;
+            
+            try {
+                llenarComponentes();
+                
+            } catch (SQLException ex) {
+                
+            }
+
+        }else{
+            jBtAnterior.setEnabled(false);
+        }
+
+    }//GEN-LAST:event_jBtAnteriorActionPerformed
+
+    private void jBtSiguienteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBtSiguienteActionPerformed
+
+        jBtAnterior.setEnabled(true);
+        
+        if (fila != tamanio) {
+
+            fila++;
+            
+            try {
+                llenarComponentes();
+                
+            } catch (SQLException ex) {
+                
+            }
+
+        }else{
+            jBtSiguiente.setEnabled(false);
+        }
+
+    }//GEN-LAST:event_jBtSiguienteActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton jBtAnterior;
+    private javax.swing.JButton jBtSiguiente;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JScrollPane jScrollPane1;
@@ -228,4 +305,30 @@ public class Panel extends javax.swing.JPanel {
     private javax.swing.JTextField jtfid;
     private javax.swing.JTextField jtfobjanual;
     // End of variables declaration//GEN-END:variables
+
+    private void llenarComponentes() throws SQLException {
+
+        try {
+            ResultSet rs;
+            Statement st = c.createStatement();
+            String query = "departamentos";
+
+            rs = st.executeQuery(query);
+            
+            System.out.println(rs.toString());
+
+            String[][] s = (String[][]) myDb.getValues(query);
+            
+
+            this.jtfid.setText(s[fila][1]);
+            this.jtfciudad.setText(s[fila][2]);
+            this.jtfobjanual.setText(s[fila][3]);
+
+        } catch (Exception e) {
+
+            this.jtaSalida.setText(e.getMessage());
+        }
+
+    }
+
 }
